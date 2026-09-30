@@ -1,1 +1,1504 @@
-jow
+<!DOCTYPE html>
+<html lang="nl" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SD Worx TrustHub — Explainable Knowledge Trust Engine</title>
+  
+  <!-- Fonts & Frameworks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            sd: {
+              navy: '#0b1d3a',
+              blue: '#0052cc',
+              royal: '#1e40af',
+              cyan: '#06b6d4',
+              teal: '#0d9488',
+              surface: '#f8fafc',
+              border: '#e2e8f0',
+              accent: '#f97316'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom gauge and transition styling */
+    .gauge-circle {
+      transition: stroke-dashoffset 0.8s ease-in-out, stroke 0.4s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+    }
+    
+    .gradient-hero {
+      background: linear-gradient(135deg, #0b1d3a 0%, #152e5a 60%, #1a365d 100%);
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes pulseSoft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+    .pulse-soft {
+      animation: pulseSoft 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 antialiased flex flex-col selection:bg-blue-100 selection:text-blue-900">
+
+  <!-- Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-4">
+        
+        <!-- Logo & Brand -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-700 to-indigo-900 flex items-center justify-center text-white shadow-md shadow-blue-900/20 font-bold text-lg tracking-wider">
+            SD
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-slate-900 tracking-tight text-lg">Trust<span class="text-blue-600">Hub</span></span>
+              <span class="px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase bg-blue-50 text-blue-700 border border-blue-200 rounded-full">Hackathon PoC</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium hidden sm:block">SD Worx Knowledge Trust & Verification Engine</p>
+          </div>
+        </div>
+
+        <!-- Global Quick Search Bar -->
+        <div class="flex-1 max-w-xl hidden md:block">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input 
+              id="globalSearchInput"
+              type="text" 
+              placeholder="Zoek HR wetgeving, CAO 200, maaltijdcheques, thuiswerk..." 
+              class="w-full pl-10 pr-10 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white text-sm border border-transparent focus:border-blue-500 rounded-xl transition duration-150 outline-none"
+              oninput="handleSearch(this.value)"
+            >
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-slate-200/70 text-slate-600 px-1.5 py-0.5 rounded border border-slate-300">⌘K</span>
+          </div>
+        </div>
+
+        <!-- Country selector & Profile -->
+        <div class="flex items-center gap-3">
+          <!-- Active Country Jurisdiction Filter -->
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button onclick="setJurisdiction('BE')" id="pill-BE" class="jurisdiction-pill px-2.5 py-1 text-xs font-semibold rounded-lg bg-white text-blue-700 shadow-sm border border-slate-200">🇧🇪 BE</button>
+            <button onclick="setJurisdiction('NL')" id="pill-NL" class="jurisdiction-pill px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900">🇳🇱 NL</button>
+            <button onclick="setJurisdiction('DE')" id="pill-DE" class="jurisdiction-pill px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900">🇩🇪 DE</button>
+            <button onclick="setJurisdiction('ALL')" id="pill-ALL" class="jurisdiction-pill px-2.5 py-1 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900">🌍 Alle</button>
+          </div>
+
+          <!-- Notification indicator for Conflicts -->
+          <button onclick="switchTab('conflicts')" class="relative p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition" title="2 Gedetecteerde tegenstrijdigheden">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600"></i>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white animate-ping"></span>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"></span>
+          </button>
+
+          <!-- User session preview -->
+          <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-xs border border-blue-200">
+              SV
+            </div>
+            <div class="hidden lg:block text-left">
+              <p class="text-xs font-semibold text-slate-800 leading-tight">Sarah V.</p>
+              <p class="text-[10px] text-slate-500">Payroll Consultant</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Context Banner / Hackathon Challenge Framing -->
+  <section class="gradient-hero text-white py-8 px-4 sm:px-6 lg:px-8 shadow-inner relative overflow-hidden">
+    <!-- Subtle background accent elements -->
+    <div class="absolute -right-12 -top-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute right-1/3 -bottom-20 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30 text-xs font-semibold mb-3">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-300"></i>
+            <span>Challenge: From "I found something" to "I know why I can rely on it"</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2">
+            Verklaarbare Betrouwbaarheid voor HR & Payroll Kennis
+          </h1>
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+            Elimineer twijfel bij dringende klantvragen. TrustHub berekent realtime een dynamische trust-score op basis van auteursexpertise, documentleeftijd, contextuele wetgeving en geautomatiseerde conflict-detectie met Teams chats en SharePoint policies.
+          </p>
+        </div>
+
+        <!-- Live Trust Health Metric Cards -->
+        <div class="grid grid-cols-3 gap-3 self-stretch lg:self-center">
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 flex flex-col justify-center">
+            <span class="text-xs text-slate-300 font-medium">Geverifieerde Kennis</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-white">87%</span>
+              <span class="text-[10px] text-emerald-400 font-bold">↑ 4.2%</span>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-0.5">PC 200 & Fiscaal</span>
+          </div>
+          
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 flex flex-col justify-center">
+            <span class="text-xs text-amber-200 font-medium">Conflicten Alert</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-amber-300">2</span>
+              <span class="text-[10px] text-amber-300 font-bold">Actie vereist</span>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-0.5">Teams vs Policy</span>
+          </div>
+
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 flex flex-col justify-center">
+            <span class="text-xs text-cyan-200 font-medium">Gem. Kennis-Score</span>
+            <div class="flex items-baseline gap-1 mt-1">
+              <span class="text-2xl font-black text-cyan-300">79</span>
+              <span class="text-[10px] text-slate-300 font-normal">/100</span>
+            </div>
+            <span class="text-[10px] text-slate-400 mt-0.5">Betrouwbaar niveau</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 mt-6 pt-4 border-t border-white/10 overflow-x-auto text-sm">
+        <button onclick="switchTab('explorer')" id="tab-explorer" class="tab-button flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-white text-slate-900 shadow-sm transition">
+          <i data-lucide="library" class="w-4 h-4 text-blue-600"></i>
+          <span>Documenten & Trust Inspectie</span>
+        </button>
+        <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-button flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition">
+          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i>
+          <span>Trust Simulator Sandbox</span>
+          <span class="px-1.5 py-0.5 text-[10px] bg-cyan-500/30 text-cyan-200 rounded-md">Interactief</span>
+        </button>
+        <button onclick="switchTab('conflicts')" id="tab-conflicts" class="tab-button flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+          <span>Conflict & Tegenstrijdigheid Radar</span>
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+        </button>
+        <button onclick="switchTab('about')" id="tab-about" class="tab-button flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-white/10 transition">
+          <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-300"></i>
+          <span>Hackathon Pitch & Methodologie</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: DOCUMENTEN & TRUST VERKENNER -->
+    <!-- ========================================== -->
+    <div id="view-explorer" class="view-panel space-y-6">
+      
+      <!-- Filter Bar -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <!-- Filter Pills -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Domein:</span>
+          <button onclick="setDomainFilter('ALL')" id="filter-domain-ALL" class="domain-filter-btn px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-900 text-white shadow-sm">Alle Domeinen</button>
+          <button onclick="setDomainFilter('Payroll')" id="filter-domain-Payroll" class="domain-filter-btn px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">Payroll & Salaris</button>
+          <button onclick="setDomainFilter('Legal')" id="filter-domain-Legal" class="domain-filter-btn px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">Arbeidsrecht & Legal</button>
+          <button onclick="setDomainFilter('Fiscaal')" id="filter-domain-Fiscaal" class="domain-filter-btn px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">Fiscaal & Voordelen</button>
+          <button onclick="setDomainFilter('Policy')" id="filter-domain-Policy" class="domain-filter-btn px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">Intern Beleid</button>
+        </div>
+
+        <!-- Trust Threshold Selector -->
+        <div class="flex items-center gap-3 self-end md:self-auto">
+          <label for="trustThreshold" class="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-blue-600"></i>
+            Min. Betrouwbaarheid:
+          </label>
+          <select id="trustThreshold" onchange="handleTrustThresholdChange(this.value)" class="text-xs font-semibold bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 outline-none focus:border-blue-500">
+            <option value="0">Alles tonen (0% - 100%)</option>
+            <option value="80">Hoge betrouwbaarheid (≥ 80%)</option>
+            <option value="60">Matig & Goedgekeurd (≥ 60%)</option>
+            <option value="risks">Alleen Risico's & Conflicten (&lt; 60%)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Quick Feedback Alert Banner -->
+      <div id="resultsCountBanner" class="text-xs text-slate-500 font-medium px-1 flex items-center justify-between">
+        <span>Toont <span id="displayedDocsCount" class="font-bold text-slate-900">4</span> documenten in de geselecteerde context</span>
+        <span class="text-slate-400 italic">Klik op een document voor de transparante score-verklaring & expertconnectie</span>
+      </div>
+
+      <!-- Document Cards Grid -->
+      <div id="documentsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: INTERACTIEVE TRUST SIMULATOR (SANDBOX) -->
+    <!-- ========================================== -->
+    <div id="view-simulator" class="view-panel hidden space-y-6">
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow">
+            <i data-lucide="sliders" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">SD Worx Trust Algorithm Simulator</h2>
+            <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+              Hoe weet een consultant of een document betrouwbaar is? Pas de parameters hieronder aan om te zien hoe de 4 pijlers (Auteur, Actualiteit, Jurisdictie en Consensus) samenwerken om een verklaarbare score te vormen.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Controls Panel (Left) -->
+        <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="settings-2" class="w-4 h-4 text-blue-600"></i>
+            Kennisparameters Aanpassen
+          </h3>
+
+          <!-- Param 1: Auteur Job/Rol -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="text-xs font-bold text-slate-700">1. Auteur & Functieniveau</label>
+              <span id="simAuthorWeight" class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Gewicht: 30%</span>
+            </div>
+            <select id="simAuthorRole" onchange="runSimulation()" class="w-full text-sm font-medium bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:border-blue-500 focus:bg-white outline-none">
+              <option value="legal_lead">Lead Subject Matter Expert / Legal Counsel (SD Worx BE)</option>
+              <option value="senior_consultant">Senior Payroll Specialist (5+ jaar ervaring)</option>
+              <option value="junior_consultant">Junior HR Consultant (&lt; 1 jaar ervaring)</option>
+              <option value="intern">Stagiair / Externe Freelancer</option>
+              <option value="unknown">Onbekend / Automatische Teams Chat export</option>
+            </select>
+            <p class="text-[11px] text-slate-500 mt-1">Hogere autoriteit en geverifieerd vakmanschap garanderen fundamentele validiteit.</p>
+          </div>
+
+          <!-- Param 2: Leeftijd van het document -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-700">2. Documentleeftijd & Actualiteit</label>
+              <span id="simAgeDisplay" class="text-xs font-bold text-slate-900 font-mono">2 maanden oud</span>
+            </div>
+            <input 
+              id="simDocAge" 
+              type="range" 
+              min="0" 
+              max="36" 
+              value="2" 
+              step="1"
+              oninput="updateAgeDisplay(this.value); runSimulation()" 
+              class="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+            >
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+              <span>Nieuw (deze maand)</span>
+              <span>12 mnd (CAO cyclus)</span>
+              <span>24 mnd</span>
+              <span>36+ mnd (Groot verouderingsrisico)</span>
+            </div>
+          </div>
+
+          <!-- Param 3: Brontype & Opslaglocatie -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1.5">3. Bron & Publicatiekanaal</label>
+            <select id="simSourceType" onchange="runSimulation()" class="w-full text-sm font-medium bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:border-blue-500 focus:bg-white outline-none">
+              <option value="official_portal">Officieel SD Worx Kennisportaal / CAO Richtlijn</option>
+              <option value="sharepoint_managed">Gemanagede Afdelings-SharePoint (HR Advisory BE)</option>
+              <option value="onenote_personal">Persoonlijke OneNote / Lokale Klantnotitie</option>
+              <option value="teams_chat">Onofficiële Teams Chat conversatie snippet</option>
+            </select>
+          </div>
+
+          <!-- Param 4: Jurisdictie Match -->
+          <div>
+            <label class="text-xs font-bold text-slate-700 block mb-1.5">4. Jurisdictie & Doelgroep Match</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300">
+                <input type="radio" name="simJurisdiction" value="exact" checked onchange="runSimulation()" class="accent-blue-600">
+                <span class="text-xs font-medium text-slate-800">Exact (PC 200 BE)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300">
+                <input type="radio" name="simJurisdiction" value="generic" onchange="runSimulation()" class="accent-blue-600">
+                <span class="text-xs font-medium text-slate-800">Algemeen EU/NL</span>
+              </label>
+              <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300">
+                <input type="radio" name="simJurisdiction" value="mismatch" onchange="runSimulation()" class="accent-blue-600">
+                <span class="text-xs font-medium text-slate-800">Ander Land/Sector</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Param 5: Validatie & Tegenstrijdigheden -->
+          <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <label class="text-xs font-bold text-slate-700 block">5. Validatiestempel & Conflict Signalen</label>
+            
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-700 font-medium">Officiële peer-review door 2e consultant</span>
+              <input type="checkbox" id="simPeerReview" checked onchange="runSimulation()" class="w-4 h-4 accent-blue-600 rounded cursor-pointer">
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+              <div>
+                <span class="text-xs text-rose-700 font-bold block">Tegenstrijdigheid gedetecteerd in Teams?</span>
+                <span class="text-[10px] text-slate-500">Collega deelt recent afwijkende info in chat</span>
+              </div>
+              <input type="checkbox" id="simConflictDetected" onchange="runSimulation()" class="w-4 h-4 accent-rose-600 rounded cursor-pointer">
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Live Score Output (Right) -->
+        <div class="lg:col-span-5 flex flex-col gap-4">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Trust Evaluatie</span>
+                <span id="simStatusPill" class="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Goudstandaard
+                </span>
+              </div>
+
+              <!-- Radial Gauge Simulator -->
+              <div class="flex flex-col items-center justify-center my-4">
+                <div class="relative w-40 h-40 flex items-center justify-center">
+                  <svg class="w-full h-full" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" stroke="#f1f5f9" stroke-width="9" fill="none" />
+                    <circle 
+                      id="simGaugeMeter"
+                      cx="50" cy="50" r="42" 
+                      stroke="#10b981" 
+                      stroke-width="9" 
+                      fill="none" 
+                      stroke-dasharray="264" 
+                      stroke-dashoffset="20"
+                      stroke-linecap="round"
+                      class="gauge-circle"
+                    />
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span id="simScoreText" class="text-4xl font-extrabold text-slate-900 tracking-tight">92%</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Trust Score</span>
+                  </div>
+                </div>
+
+                <p id="simRecommendation" class="text-xs text-center font-medium text-slate-600 mt-2 max-w-xs">
+                  Veilig te delen met klanten. Alle wettelijke controles en auteursexpertise zijn gegarandeerd.
+                </p>
+              </div>
+
+              <!-- Breakdown 4 Pillars -->
+              <div class="space-y-2.5 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-600 flex items-center gap-1.5">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600"></i> Auteursexpertise
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div id="simBarAuthor" class="bg-blue-600 h-full rounded-full" style="width: 95%"></div>
+                    </div>
+                    <span id="simValAuthor" class="font-bold text-slate-800 w-8 text-right font-mono">95%</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-600 flex items-center gap-1.5">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-600"></i> Actualiteit (Datum)
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div id="simBarRecency" class="bg-blue-600 h-full rounded-full" style="width: 90%"></div>
+                    </div>
+                    <span id="simValRecency" class="font-bold text-slate-800 w-8 text-right font-mono">90%</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-600 flex items-center gap-1.5">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-blue-600"></i> Jurisdictie & Match
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div id="simBarJurisdiction" class="bg-blue-600 h-full rounded-full" style="width: 100%"></div>
+                    </div>
+                    <span id="simValJurisdiction" class="font-bold text-slate-800 w-8 text-right font-mono">100%</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-600 flex items-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-600"></i> Validatie & Consensus
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <div class="w-20 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div id="simBarConsensus" class="bg-blue-600 h-full rounded-full" style="width: 85%"></div>
+                    </div>
+                    <span id="simValConsensus" class="font-bold text-slate-800 w-8 text-right font-mono">85%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainability Box -->
+            <div id="simExplanationBox" class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-normal">
+              <strong>Verklaring:</strong> Deze documentatie geniet maximaal vertrouwen omdat de auteur een erkende Lead SME is en de materie minder dan 3 maanden geleden geactualiseerd werd volgens PC 200 bepalingen.
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: CONFLICT & DUPLICAAT RADAR -->
+    <!-- ========================================== -->
+    <div id="view-conflicts" class="view-panel hidden space-y-6">
+      
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-amber-950">Gedetecteerde Tegenstrijdigheden in Kennisbronnen</h2>
+            <p class="text-xs text-amber-900/80 mt-0.5 leading-relaxed">
+              Het hackathon scenario in actie: Een consultant zoekt een antwoord, maar vindt conflicterende berichten tussen een officieel SharePoint beleid en een recente Teams-discussie. TrustHub markeert deze frictie direct om fout advies te voorkomen.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conflict Comparison Card 1 -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-slate-900 text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span class="font-bold text-sm">Conflict Case #BE-2024-09: Fietsleasing Fiscale Maxima</span>
+          </div>
+          <span class="text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2.5 py-1 rounded-full">
+            Impact: Hoge onzekerheid bij klantgesprek
+          </span>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+          
+          <!-- Source A -->
+          <div class="space-y-3 pr-0 md:pr-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">Bron A: SharePoint Document</span>
+              <span class="text-xs text-slate-500">14 maanden oud</span>
+            </div>
+            <h4 class="font-bold text-slate-900 text-sm">Fietsleasing & Fiscale Vrijstelling (v2.1)</h4>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 font-mono">
+              "De maximale fiscale kilometervergoeding voor fietswoon-werkverkeer bedraagt <span class="bg-amber-200 text-amber-900 px-1 font-bold">€ 0,27 per km</span>."
+            </div>
+            <div class="text-[11px] text-slate-500 flex items-center gap-2">
+              <i data-lucide="user" class="w-3.5 h-3.5"></i>
+              Auteur: Junior Consultant (HR Advisory)
+            </div>
+          </div>
+
+          <!-- Source B -->
+          <div class="space-y-3 pt-4 md:pt-0 md:pl-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">Bron B: MS Teams Chat Snippet</span>
+              <span class="text-xs text-emerald-600 font-semibold">Gisteren (14:32)</span>
+            </div>
+            <h4 class="font-bold text-slate-900 text-sm">Teams: Kanaal #payroll-updates-be</h4>
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-slate-700 font-mono">
+              "Opgelet iedereen! Sinds het nieuwe KB is het fiscaal vrijgesteld bedrag verhoogd naar <span class="bg-emerald-200 text-emerald-900 px-1 font-bold">€ 0,35 per km</span>!"
+            </div>
+            <div class="text-[11px] text-slate-500 flex items-center gap-2">
+              <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600"></i>
+              Auteur: Marc Willems (Lead SME Tax & Legal SD Worx)
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Resolution bar -->
+        <div class="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2 text-xs text-slate-700">
+            <i data-lucide="bot" class="w-4 h-4 text-blue-600"></i>
+            <span><strong>TrustHub AI Conclusie:</strong> Bron B (Teams SME) weerspiegelt de actuele wetgeving van 2024. Bron A is verouderd.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="resolveConflict('Bron B goedgekeurd')" class="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
+              Bevestig & Update Beleidsdocument
+            </button>
+            <button onclick="openExpertModal('Marc Willems', 'Lead SME Tax & Legal')" class="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition">
+              Vraag Marc
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Conflict Case 2 -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <i data-lucide="globe" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-slate-900 text-sm">Internationale Thuiswerk Policy: Jurisdictie Conflict</h4>
+              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">NL vs BE</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Document bevat gemengde richtlijnen voor grensarbeiders zonder scheiding tussen Nederlandse belastingregels en Belgische RSZ-drempels.
+            </p>
+          </div>
+        </div>
+        <button onclick="inspectDocument(3)" class="shrink-0 px-3.5 py-2 text-xs font-bold rounded-xl border border-blue-600 text-blue-600 hover:bg-blue-50 transition">
+          Bekijk Document Inspectie
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: HACKATHON PITCH & METHODOLOGIE -->
+    <!-- ========================================== -->
+    <div id="view-about" class="view-panel hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm max-w-4xl mx-auto space-y-6">
+        <div>
+          <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">SD Worx Hackathon Inzending</span>
+          <h2 class="text-2xl font-extrabold text-slate-900 mt-1">Hoe TrustHub Fragmentatie Transformeert in Vertrouwen</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">1</div>
+            <h3 class="font-bold text-slate-900 text-sm">Het Verborgen Probleem</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Binnen SD Worx leeft kennis in duizenden e-mails, Teams kanalen, SharePoint mappen en in de hoofden van senior experts. Traditionele zoekmachines en simpele AI bots tonen documenten zonder te weten of de auteur bevoegd was, of de wetgeving gisteren is gewijzigd, of dat de context voor Nederland geldt in plaats van België.
+            </p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">2</div>
+            <h3 class="font-bold text-slate-900 text-sm">De Oplossing: Explainable Trust</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Geen black-box AI score. TrustHub breekt betrouwbaarheid open in vier objectieve pijlers: <strong>Auteursexpertise</strong> (30%), <strong>Actualiteit</strong> (25%), <strong>Jurisdictie Context</strong> (20%) en <strong>Consensus / Peer-Review</strong> (25%). Als documenten botsen, toont de engine het conflict direct.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-blue-50/70 border border-blue-200">
+          <h4 class="font-bold text-blue-950 text-sm mb-2 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-blue-600"></i>
+            Aansluiting op de 4 Inspiratiegebieden uit de Briefing
+          </h4>
+          <ul class="text-xs text-blue-900/90 space-y-2">
+            <li><strong>• Trust:</strong> Direct inzicht via kleurcodes en breakdown waarom een document 98% of 32% betrouwbaar is.</li>
+            <li><strong>• Capture:</strong> Teams-chats en informele antwoorden van experts worden meegenomen als actuele verificatiesignalen.</li>
+            <li><strong>• Detect:</strong> Geautomatiseerde detectie van verouderde CAO-bedragen en tegenstrijdigheden tussen documenten.</li>
+            <li><strong>• Connect:</strong> Wanneer een document twijfel oproept, verbindt de applicatie de medewerker met 1 klik aan de juiste SME.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- INSPECTION SLIDE-OVER DRAWER (EXPLAINABLE TRUST MODAL) -->
+  <div id="inspectorDrawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeInspector()"></div>
+
+    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+      <div class="pointer-events-auto w-screen max-w-xl bg-white shadow-2xl flex flex-col">
+        
+        <!-- Drawer Header -->
+        <div class="p-6 bg-slate-900 text-white flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="drawerBadge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Geverifieerd
+              </span>
+              <span id="drawerCountry" class="text-xs text-slate-400 font-semibold">🇧🇪 België (PC 200)</span>
+            </div>
+            <h2 id="drawerTitle" class="text-lg font-bold text-white mt-1 leading-snug">Document Titel</h2>
+            <p id="drawerMeta" class="text-xs text-slate-400 mt-1">Auteur: Sarah • Bijgewerkt: 2 maanden geleden</p>
+          </div>
+          <button onclick="closeInspector()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Drawer Body (Scrollable) -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          
+          <!-- Trust Score Radial Hero in Drawer -->
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Trust Score Verdict</span>
+              <span id="drawerScoreVerdict" class="text-lg font-extrabold text-slate-900 block mt-0.5">Goudstandaard</span>
+              <p id="drawerVerdictDesc" class="text-xs text-slate-600 max-w-xs mt-1">
+                Dit document is officieel getoetst en klaar voor extern klantadvies.
+              </p>
+            </div>
+            <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+              <svg class="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" stroke="#e2e8f0" stroke-width="8" fill="none" />
+                <circle 
+                  id="drawerGaugeCircle"
+                  cx="50" cy="50" r="42" 
+                  stroke="#10b981" 
+                  stroke-width="8" 
+                  fill="none" 
+                  stroke-dasharray="264" 
+                  stroke-dashoffset="30"
+                  stroke-linecap="round"
+                  class="gauge-circle"
+                />
+              </svg>
+              <span id="drawerScoreValue" class="absolute text-xl font-black text-slate-900">94%</span>
+            </div>
+          </div>
+
+          <!-- Alert / Warning Container (Dynamic) -->
+          <div id="drawerAlertBox" class="p-3.5 rounded-xl text-xs space-y-1"></div>
+
+          <!-- Explainable Pillars Breakdown -->
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+              Score Uitleg & Deelscores (4 Pijlers)
+            </h3>
+
+            <!-- Pillar 1 -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i data-lucide="user-check" class="w-4 h-4 text-blue-600"></i>
+                  1. Auteur & Expertise (30%)
+                </span>
+                <span id="drawerPillarAuthorScore" class="font-bold text-emerald-600 font-mono">96/100</span>
+              </div>
+              <p id="drawerPillarAuthorText" class="text-xs text-slate-600">
+                Auteur is Senior Legal Counsel Payroll bij SD Worx met erkend mandaat voor CAO interpretaties.
+              </p>
+            </div>
+
+            <!-- Pillar 2 -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
+                  2. Actualiteit & Geldigheid (25%)
+                </span>
+                <span id="drawerPillarRecencyScore" class="font-bold text-emerald-600 font-mono">92/100</span>
+              </div>
+              <p id="drawerPillarRecencyText" class="text-xs text-slate-600">
+                Laatste herziening vond plaats 2 maanden geleden. Geen nieuwe KBs of wetswijzigingen geregistreerd sindsdien.
+              </p>
+            </div>
+
+            <!-- Pillar 3 -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i>
+                  3. Context & Jurisdictie (20%)
+                </span>
+                <span id="drawerPillarJurisdictionScore" class="font-bold text-emerald-600 font-mono">100/100</span>
+              </div>
+              <p id="drawerPillarJurisdictionText" class="text-xs text-slate-600">
+                Volledige aansluiting bij de Belgische arbeidswetgeving en specifiek paritair comité.
+              </p>
+            </div>
+
+            <!-- Pillar 4 -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
+                  4. Validatie & Consensus (25%)
+                </span>
+                <span id="drawerPillarConsensusScore" class="font-bold text-emerald-600 font-mono">90/100</span>
+              </div>
+              <p id="drawerPillarConsensusText" class="text-xs text-slate-600">
+                Bevestigd door 2 onafhankelijke payroll revisoren. Geen afwijkende discussies in interne Teams-groepen.
+              </p>
+            </div>
+          </div>
+
+          <!-- Quick Excerpt from the actual knowledge -->
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Inhoudsfragment</span>
+            <p id="drawerSnippet" class="text-xs text-slate-700 italic leading-relaxed">
+              "Maaltijdcheques mogen in België maximaal € 8,00 per gewerkte dag bedragen met een werkgeversbijdrage van maximaal € 6,91 en minimaal € 1,09 werknemersbijdrage..."
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Drawer Footer Actions -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <button id="drawerContactBtn" class="px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            <span>Vraag Expert</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="triggerVerification()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 text-slate-700 hover:bg-white transition flex items-center gap-1">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+              <span>Herbevestig</span>
+            </button>
+            <button onclick="reportConflict()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition flex items-center gap-1">
+              <i data-lucide="flag" class="w-4 h-4"></i>
+              <span>Meld Conflict</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPERT CONNECT MODAL (Connect when documents aren't enough) -->
+  <div id="expertModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+      <div class="p-5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex justify-between items-center">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-200 border border-blue-400/30 flex items-center justify-center font-bold text-sm">
+            <i data-lucide="user-check" class="w-5 h-5 text-cyan-300"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white">Direct Verbinden met SME</h3>
+            <p class="text-[11px] text-blue-200">SD Worx Expertise Netwerk</p>
+          </div>
+        </div>
+        <button onclick="closeExpertModal()" class="text-blue-200 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <div class="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm" id="modalExpertInitials">
+            AL
+          </div>
+          <div>
+            <h4 class="font-bold text-sm text-slate-900" id="modalExpertName">Anke Lemmens</h4>
+            <p class="text-xs text-slate-500" id="modalExpertRole">Senior Legal Counsel Payroll BE</p>
+            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-semibold mt-0.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Beschikbaar op Teams
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-700 block mb-1">Jouw Vraag of Context</label>
+          <textarea id="expertMessageText" rows="3" class="w-full text-xs p-3 rounded-xl border border-slate-300 focus:border-blue-500 outline-none" placeholder="Bv: Een klant vraagt of maaltijdcheques ook gelden tijdens de inwerkperiode voor PC 200 bedienden..."></textarea>
+          <p class="text-[10px] text-slate-400 mt-1">Het huidige document en de berekende trust score worden automatisch meegezonden als context.</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button onclick="closeExpertModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Annuleren
+          </button>
+          <button onclick="sendExpertInquiry()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition flex items-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Start Teams Chat & Deel Dossier</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-sm w-full bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex items-start gap-3 border border-slate-700">
+    <div id="toastIcon" class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <div class="flex-1">
+      <h5 id="toastTitle" class="text-xs font-bold">Actie voltooid</h5>
+      <p id="toastMessage" class="text-[11px] text-slate-300 mt-0.5">Bericht details hier</p>
+    </div>
+    <button onclick="dismissToast()" class="text-slate-400 hover:text-white">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <script>
+    // ==========================================
+    // DATASET: REAL-WORLD KNOWLEDGE CASES
+    // ==========================================
+    const mockDocuments = [
+      {
+        id: 1,
+        title: "Belgische Maaltijdchequereglementering 2024",
+        excerpt: "Officiële richtlijnen voor werkgeversbijdrage, maximale vrijstelling (€ 8/dag) en RSZ-vrijstelling conform de meest recente KBs voor de privésector.",
+        domain: "Fiscaal",
+        country: "BE",
+        author: {
+          name: "Anke Lemmens",
+          role: "Senior Legal Counsel Payroll BE",
+          authorityLevel: "high"
+        },
+        updatedAgo: "2 maanden geleden",
+        updateDate: "2024-01-15",
+        source: "SD Worx Legal Portal (Geverifieerd)",
+        sourceType: "official_portal",
+        status: "Geverifieerd",
+        score: 94,
+        pillars: {
+          author: 96,
+          recency: 92,
+          jurisdiction: 100,
+          consensus: 90
+        },
+        flags: [
+          { type: "success", text: "Geverifieerd door Lead Legal SME" },
+          { type: "info", text: "Geen wetswijzigingen na datum" }
+        ],
+        snippet: "De maximale nominale waarde van een maaltijdcheque bedraagt 8,00 EUR. De tussenkomst van de werkgever bedraagt ten hoogste 6,91 EUR, terwijl de werknemersbijdrage minstens 1,09 EUR moet bedragen om vrijgesteld te blijven van sociale lasten."
+      },
+      {
+        id: 2,
+        title: "Fietsleasing & Fiscale Vrijstelling (Handleiding)",
+        excerpt: "Praktische gids voor de toekenning van fietsen binnen flexibele verloningsplannen en bijhorende kilometervergoedingen.",
+        domain: "Payroll",
+        country: "BE",
+        author: {
+          name: "Thomas De Backer",
+          role: "Junior HR Consultant",
+          authorityLevel: "low"
+        },
+        updatedAgo: "14 maanden geleden",
+        updateDate: "2023-01-10",
+        source: "SharePoint HR Advisory BE",
+        sourceType: "sharepoint_managed",
+        status: "Verouderd Risico",
+        score: 68,
+        pillars: {
+          author: 65,
+          recency: 52,
+          jurisdiction: 95,
+          consensus: 60
+        },
+        flags: [
+          { type: "warning", text: "Mogelijk verouderde km-bedragen (KB 2024)" },
+          { type: "alert", text: "Conflict met recente Teams update" }
+        ],
+        snippet: "De kilometervergoeding voor fietsers bedraagt 0,27 EUR/km volgens de toen geldende richtlijn. Let op: nieuwe fiscale plafonds zijn momenteel niet opgenomen in deze handleiding."
+      },
+      {
+        id: 3,
+        title: "Internationale Thuiswerk Policy (Cross-Border)",
+        excerpt: "Regels rond grensarbeid en telewerk voor werknemers die wonen in Nederland en werken in België.",
+        domain: "Policy",
+        country: "BE",
+        author: {
+          name: "Onbekend / Teams Export",
+          role: "Niet-geverifieerde bijdrager",
+          authorityLevel: "none"
+        },
+        updatedAgo: "3 jaar geleden",
+        updateDate: "2021-06-20",
+        source: "MS Teams Kanaal Archief",
+        sourceType: "teams_chat",
+        status: "Tegenstrijdig / Risico",
+        score: 32,
+        pillars: {
+          author: 25,
+          recency: 20,
+          jurisdiction: 45,
+          consensus: 38
+        },
+        flags: [
+          { type: "danger", text: "Tegenstrijdige informatie NL vs BE" },
+          { type: "danger", text: "Geen officiële review eigenaar" }
+        ],
+        snippet: "Grensarbeiders mogen ongelimiteerd thuiswerken mits wederzijds akkoord tussen leidinggevende en werknemer. [WAARSCHUWING: Dit schendt de 25% RSZ-Europese kaderovereenkomst drempel]."
+      },
+      {
+        id: 4,
+        title: "Eindejaarspremie PC 200: Volledige Berekeningsformule",
+        excerpt: "Stap-voor-stap methode voor het berekenen van de 13de maand voor bedienden in het Aanvullend Paritair Comité (PC 200).",
+        domain: "Payroll",
+        country: "BE",
+        author: {
+          name: "Marc Willems",
+          role: "Lead Subject Matter Expert PC 200",
+          authorityLevel: "high"
+        },
+        updatedAgo: "Vorige week",
+        updateDate: "2024-02-02",
+        source: "SD Worx CAO Kennisbank",
+        sourceType: "official_portal",
+        status: "Gold Standard",
+        score: 98,
+        pillars: {
+          author: 99,
+          recency: 98,
+          jurisdiction: 100,
+          consensus: 95
+        },
+        flags: [
+          { type: "success", text: "Officiële SD Worx Gold Standard" },
+          { type: "success", text: "Afgestemd op recente indexeringen" }
+        ],
+        snippet: "De eindejaarspremie is gelijk aan het maandloon van december, vermeerderd met de gemiddelde variabele verloning van de voorafgaande 12 maanden, pro rata berekend bij onvolledig dienstjaar conform CAO art. 3."
+      }
+    ];
+
+    // Current State
+    let activeTab = 'explorer';
+    let activeJurisdiction = 'BE';
+    let activeDomain = 'ALL';
+    let activeThreshold = 0;
+    let searchQuery = '';
+    let currentInspectedDoc = null;
+
+    // ==========================================
+    // TRUST SCORE CALCULATION ALGORITHM
+    // ==========================================
+    function calculateTrustScore(authorRole, ageMonths, sourceType, jurisdictionMatch, peerReviewed, hasConflict) {
+      // 1. Author Expertise (Weight: 30%)
+      let authorScore = 30;
+      if (authorRole === 'legal_lead') authorScore = 98;
+      else if (authorRole === 'senior_consultant') authorScore = 85;
+      else if (authorRole === 'junior_consultant') authorScore = 60;
+      else if (authorRole === 'intern') authorScore = 35;
+      else if (authorRole === 'unknown') authorScore = 15;
+
+      // 2. Recency & Legal Validity (Weight: 25%)
+      // Decay curves: fresh < 3 months is optimal, decays significantly after 12 months
+      let recencyScore = 100;
+      if (ageMonths <= 3) {
+        recencyScore = 100 - (ageMonths * 2);
+      } else if (ageMonths <= 12) {
+        recencyScore = 94 - ((ageMonths - 3) * 4);
+      } else if (ageMonths <= 24) {
+        recencyScore = 58 - ((ageMonths - 12) * 2.5);
+      } else {
+        recencyScore = Math.max(10, 28 - ((ageMonths - 24) * 1.5));
+      }
+
+      // 3. Jurisdiction & Scope Match (Weight: 20%)
+      let jurisdictionScore = 100;
+      if (jurisdictionMatch === 'exact') jurisdictionScore = 100;
+      else if (jurisdictionMatch === 'generic') jurisdictionScore = 65;
+      else if (jurisdictionMatch === 'mismatch') jurisdictionScore = 20;
+
+      // 4. Source & Consensus (Weight: 25%)
+      let consensusScore = 50;
+      if (sourceType === 'official_portal') consensusScore = 95;
+      else if (sourceType === 'sharepoint_managed') consensusScore = 75;
+      else if (sourceType === 'onenote_personal') consensusScore = 40;
+      else if (sourceType === 'teams_chat') consensusScore = 25;
+
+      if (peerReviewed) consensusScore = Math.min(100, consensusScore + 20);
+
+      // Conflict penalty
+      let conflictPenalty = 0;
+      if (hasConflict) {
+        conflictPenalty = 35;
+      }
+
+      // Weighted Total
+      const weightedRaw = (authorScore * 0.30) + (recencyScore * 0.25) + (jurisdictionScore * 0.20) + (consensusScore * 0.25);
+      const finalScore = Math.max(5, Math.min(99, Math.round(weightedRaw - conflictPenalty)));
+
+      return {
+        total: finalScore,
+        author: Math.round(authorScore),
+        recency: Math.round(recencyScore),
+        jurisdiction: Math.round(jurisdictionScore),
+        consensus: Math.round(consensusScore),
+        hasConflict: hasConflict
+      };
+    }
+
+    // ==========================================
+    // UI RENDERING & FILTERING
+    // ==========================================
+    function renderDocuments() {
+      const container = document.getElementById('documentsGrid');
+      container.innerHTML = '';
+
+      const filtered = mockDocuments.filter(doc => {
+        // Country filter
+        if (activeJurisdiction !== 'ALL' && doc.country !== activeJurisdiction) {
+          return false;
+        }
+        // Domain filter
+        if (activeDomain !== 'ALL' && doc.domain !== activeDomain) {
+          return false;
+        }
+        // Trust threshold
+        if (activeThreshold === 'risks') {
+          if (doc.score >= 60) return false;
+        } else if (doc.score < parseInt(activeThreshold)) {
+          return false;
+        }
+        // Search query
+        if (searchQuery.trim() !== '') {
+          const q = searchQuery.toLowerCase();
+          const matchTitle = doc.title.toLowerCase().includes(q);
+          const matchExcerpt = doc.excerpt.toLowerCase().includes(q);
+          const matchAuthor = doc.author.name.toLowerCase().includes(q);
+          if (!matchTitle && !matchExcerpt && !matchAuthor) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('displayedDocsCount').innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-12 text-center bg-white rounded-2xl border border-dashed border-slate-300 p-8">
+            <i data-lucide="search-x" class="w-10 h-10 text-slate-400 mx-auto mb-3"></i>
+            <h3 class="text-sm font-bold text-slate-800">Geen documenten gevonden</h3>
+            <p class="text-xs text-slate-500 mt-1">Probeer je zoekfilters aan te passen of verlaag de minimale trust score.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      filtered.forEach(doc => {
+        // Color tokens based on Trust Score
+        let badgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+        let strokeColor = '#10b981';
+        let cardBorder = 'border-slate-200 hover:border-blue-400';
+        
+        if (doc.score < 50) {
+          badgeColor = 'bg-rose-50 text-rose-800 border-rose-200';
+          strokeColor = '#f43f5e';
+          cardBorder = 'border-rose-200 hover:border-rose-400';
+        } else if (doc.score < 80) {
+          badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
+          strokeColor = '#f59e0b';
+          cardBorder = 'border-amber-200 hover:border-amber-400';
+        }
+
+        // Flags HTML
+        const flagsHtml = doc.flags.map(f => {
+          let fClass = "bg-slate-100 text-slate-700";
+          let icon = "info";
+          if (f.type === "success") { fClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"; icon = "check"; }
+          if (f.type === "warning") { fClass = "bg-amber-50 text-amber-800 border border-amber-200"; icon = "alert-circle"; }
+          if (f.type === "danger") { fClass = "bg-rose-50 text-rose-800 border border-rose-200 font-bold"; icon = "alert-triangle"; }
+          return `<span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md ${fClass}"><i data-lucide="${icon}" class="w-3 h-3"></i>${f.text}</span>`;
+        }).join('');
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-2xl border ${cardBorder} p-5 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between cursor-pointer group`;
+        card.onclick = () => inspectDocument(doc.id);
+
+        card.innerHTML = `
+          <div>
+            <!-- Top Badges & Score -->
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">🇧🇪 ${doc.country}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700">${doc.domain}</span>
+                <span class="text-[10px] font-medium text-slate-500">• ${doc.updatedAgo}</span>
+              </div>
+              
+              <!-- Mini Trust Score Badge -->
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border ${badgeColor} shrink-0">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                <span class="font-black text-xs font-mono">${doc.score}% Trust</span>
+              </div>
+            </div>
+
+            <!-- Title & Excerpt -->
+            <h3 class="text-base font-bold text-slate-900 group-hover:text-blue-600 transition leading-snug">
+              ${doc.title}
+            </h3>
+            <p class="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed">
+              ${doc.excerpt}
+            </p>
+
+            <!-- Flags / Signals -->
+            <div class="flex flex-wrap gap-1.5 mt-3.5">
+              ${flagsHtml}
+            </div>
+          </div>
+
+          <!-- Bottom Author & Action Bar -->
+          <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
+                ${doc.author.name.split(' ').map(n=>n[0]).join('')}
+              </div>
+              <div>
+                <span class="font-bold text-slate-800 block text-xs leading-none">${doc.author.name}</span>
+                <span class="text-[10px] text-slate-500 leading-none">${doc.author.role}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-blue-600 font-bold group-hover:translate-x-0.5 transition text-xs">
+              <span>Inspecteer</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Tab Switching
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+        btn.classList.add('text-slate-300');
+      });
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-300');
+      }
+
+      const activePanel = document.getElementById(`view-${tabId}`);
+      if (activePanel) {
+        activePanel.classList.remove('hidden');
+      }
+
+      // If switched to simulator, ensure calculation is run
+      if (tabId === 'simulator') {
+        runSimulation();
+      }
+
+      lucide.createIcons();
+    }
+
+    // Country Jurisdiction
+    function setJurisdiction(code) {
+      activeJurisdiction = code;
+      document.querySelectorAll('.jurisdiction-pill').forEach(p => {
+        p.classList.remove('bg-white', 'text-blue-700', 'shadow-sm', 'font-semibold');
+        p.classList.add('text-slate-600', 'font-medium');
+      });
+
+      const activePill = document.getElementById(`pill-${code}`);
+      if (activePill) {
+        activePill.classList.add('bg-white', 'text-blue-700', 'shadow-sm', 'font-semibold');
+        activePill.classList.remove('text-slate-600', 'font-medium');
+      }
+
+      renderDocuments();
+      showToast('Jurisdictie Aangepast', `Kenniscontext staat nu ingesteld op ${code}. Trust-scores zijn herrekend.`);
+    }
+
+    // Domain Filter
+    function setDomainFilter(domain) {
+      activeDomain = domain;
+      document.querySelectorAll('.domain-filter-btn').forEach(b => {
+        b.className = "domain-filter-btn px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200";
+      });
+
+      const selected = document.getElementById(`filter-domain-${domain}`);
+      if (selected) {
+        selected.className = "domain-filter-btn px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-900 text-white shadow-sm";
+      }
+
+      renderDocuments();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val;
+      renderDocuments();
+    }
+
+    function handleTrustThresholdChange(val) {
+      activeThreshold = val;
+      renderDocuments();
+    }
+
+    // ==========================================
+    // INSPECTOR DRAWER
+    // ==========================================
+    function inspectDocument(id) {
+      const doc = mockDocuments.find(d => d.id === id);
+      if (!doc) return;
+      currentInspectedDoc = doc;
+
+      // Populate text fields
+      document.getElementById('drawerTitle').innerText = doc.title;
+      document.getElementById('drawerCountry').innerText = `🇧🇪 ${doc.country} • ${doc.source}`;
+      document.getElementById('drawerMeta').innerText = `Auteur: ${doc.author.name} (${doc.author.role}) • Update: ${doc.updatedAgo}`;
+      document.getElementById('drawerSnippet').innerText = `"${doc.snippet}"`;
+      document.getElementById('drawerScoreValue').innerText = `${doc.score}%`;
+
+      // Update Gauge Circle (Circumference 264)
+      const circle = document.getElementById('drawerGaugeCircle');
+      const offset = 264 - (264 * (doc.score / 100));
+      circle.style.strokeDashoffset = offset;
+
+      let strokeColor = '#10b981';
+      let verdict = 'Goudstandaard — Veilig te gebruiken';
+      let verdictDesc = 'Dit document is officieel getoetst en direct inzetbaar voor klantadvies.';
+      let badgeStyle = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+
+      if (doc.score < 50) {
+        strokeColor = '#f43f5e';
+        verdict = 'Hoog Risico — Bevat Conflicten';
+        verdictDesc = 'Niet gebruiken voor klanten zonder expliciete validatie door een Legal Expert.';
+        badgeStyle = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      } else if (doc.score < 80) {
+        strokeColor = '#f59e0b';
+        verdict = 'Voorzichtigheid — Verouderingsrisico';
+        verdictDesc = 'De inhoud is grotendeels correct maar vereist een check op gewijzigde bedragen.';
+        badgeStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      }
+
+      circle.setAttribute('stroke', strokeColor);
+      document.getElementById('drawerScoreVerdict').innerText = verdict;
+      document.getElementById('drawerScoreVerdict').style.color = strokeColor;
+      document.getElementById('drawerVerdictDesc').innerText = verdictDesc;
+      document.getElementById('drawerBadge').innerText = doc.status;
+      document.getElementById('drawerBadge').className = `text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeStyle}`;
+
+      // Pillars
+      document.getElementById('drawerPillarAuthorScore').innerText = `${doc.pillars.author}/100`;
+      document.getElementById('drawerPillarRecencyScore').innerText = `${doc.pillars.recency}/100`;
+      document.getElementById('drawerPillarJurisdictionScore').innerText = `${doc.pillars.jurisdiction}/100`;
+      document.getElementById('drawerPillarConsensusScore').innerText = `${doc.pillars.consensus}/100`;
+
+      // Alert Box
+      const alertBox = document.getElementById('drawerAlertBox');
+      if (doc.score < 60) {
+        alertBox.className = "p-3.5 rounded-xl text-xs space-y-1 bg-rose-50 border border-rose-200 text-rose-900";
+        alertBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Waarom is deze score laag?</div>
+          <p class="text-[11px] text-rose-800">Geen erkende eigenaar geregistreerd. Er werd een conflict gedetecteerd met de geldende RSZ-drempels voor thuiswerk.</p>
+        `;
+      } else {
+        alertBox.className = "p-3.5 rounded-xl text-xs space-y-1 bg-emerald-50 border border-emerald-200 text-emerald-900";
+        alertBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Hoge Betrouwbaarheidsgarantie</div>
+          <p class="text-[11px] text-emerald-800">Auteur bezit formele bevoegdheid voor PC 200 en de CAO-cyclus is up-to-date.</p>
+        `;
+      }
+
+      // Configure Contact Button
+      document.getElementById('drawerContactBtn').onclick = () => {
+        openExpertModal(doc.author.name, doc.author.role);
+      };
+
+      document.getElementById('inspectorDrawer').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeInspector() {
+      document.getElementById('inspectorDrawer').classList.add('hidden');
+    }
+
+    // ==========================================
+    // TRUST SIMULATOR LOGIC
+    // ==========================================
+    function updateAgeDisplay(val) {
+      document.getElementById('simAgeDisplay').innerText = `${val} ${val === '1' ? 'maand' : 'maanden'} oud`;
+    }
+
+    function runSimulation() {
+      const authorRole = document.getElementById('simAuthorRole').value;
+      const ageMonths = parseInt(document.getElementById('simDocAge').value);
+      const sourceType = document.getElementById('simSourceType').value;
+      const jurisdictionMatch = document.querySelector('input[name="simJurisdiction"]:checked').value;
+      const peerReviewed = document.getElementById('simPeerReview').checked;
+      const hasConflict = document.getElementById('simConflictDetected').checked;
+
+      const calc = calculateTrustScore(authorRole, ageMonths, sourceType, jurisdictionMatch, peerReviewed, hasConflict);
+
+      // Update text & scores
+      document.getElementById('simScoreText').innerText = `${calc.total}%`;
+      document.getElementById('simValAuthor').innerText = `${calc.author}%`;
+      document.getElementById('simValRecency').innerText = `${calc.recency}%`;
+      document.getElementById('simValJurisdiction').innerText = `${calc.jurisdiction}%`;
+      document.getElementById('simValConsensus').innerText = `${calc.consensus}%`;
+
+      // Update Bars
+      document.getElementById('simBarAuthor').style.width = `${calc.author}%`;
+      document.getElementById('simBarRecency').style.width = `${calc.recency}%`;
+      document.getElementById('simBarJurisdiction').style.width = `${calc.jurisdiction}%`;
+      document.getElementById('simBarConsensus').style.width = `${calc.consensus}%`;
+
+      // Update Gauge
+      const meter = document.getElementById('simGaugeMeter');
+      const offset = 264 - (264 * (calc.total / 100));
+      meter.style.strokeDashoffset = offset;
+
+      // Styling based on score
+      let color = '#10b981';
+      let pillText = 'Goudstandaard';
+      let pillClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      let recommendation = 'Veilig te delen met klanten. Alle wettelijke controles en auteursexpertise zijn gegarandeerd.';
+      let explanation = `<strong>Waarom deze score (${calc.total}%)?</strong> Dit document geniet hoge betrouwbaarheid dankzij sterke autoriteit en actuele validatie.`;
+
+      if (calc.total < 45) {
+        color = '#f43f5e';
+        pillText = 'Hoog Risico';
+        pillClass = 'bg-rose-100 text-rose-800 border-rose-200';
+        recommendation = 'Niet gebruiken voor extern advies. Vraag eerst een review aan een Senior SME.';
+        explanation = `<strong>Waarschuwing (${calc.total}%):</strong> `;
+        if (calc.hasConflict) {
+          explanation += `Er is een actieve tegenstrijdigheid gedetecteerd (-35% boete). `;
+        }
+        if (calc.recency < 40) {
+          explanation += `Het document is sterk verouderd en stemt vermoedelijk niet meer overeen met de huidige wetgeving. `;
+        }
+        if (calc.author < 30) {
+          explanation += `De auteur heeft geen gecertificeerde rol voor dit domein.`;
+        }
+      } else if (calc.total < 75) {
+        color = '#f59e0b';
+        pillText = 'Voorzichtig';
+        pillClass = 'bg-amber-100 text-amber-800 border-amber-200';
+        recommendation = 'Geschikt voor intern overleg, maar controleer de recentste wetswijzigingen voor klantbevestiging.';
+        explanation = `<strong>Aandachtspunten (${calc.total}%):</strong> De basis is bruikbaar, maar de betrouwbaarheid kan verhoogd worden door een formele peer-review of validatie door een erkende Lead.`;
+      }
+
+      meter.setAttribute('stroke', color);
+      const pill = document.getElementById('simStatusPill');
+      pill.innerText = pillText;
+      pill.className = `px-2.5 py-1 text-xs font-bold rounded-full border ${pillClass}`;
+      document.getElementById('simRecommendation').innerText = recommendation;
+      document.getElementById('simExplanationBox').innerHTML = explanation;
+    }
+
+    // ==========================================
+    // EXPERT CONNECT MODAL
+    // ==========================================
+    function openExpertModal(name, role) {
+      document.getElementById('modalExpertName').innerText = name;
+      document.getElementById('modalExpertRole').innerText = role;
+      document.getElementById('modalExpertInitials').innerText = name.split(' ').map(n=>n[0]).join('');
+      document.getElementById('expertModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeExpertModal() {
+      document.getElementById('expertModal').classList.add('hidden');
+    }
+
+    function sendExpertInquiry() {
+      const expertName = document.getElementById('modalExpertName').innerText;
+      closeExpertModal();
+      showToast(
+        "Teams Sessie Gestart", 
+        `Er is een direct chatbericht verstuurd naar ${expertName} inclusief documentcontext en trust-diagnose.`
+      );
+    }
+
+    function resolveConflict(actionText) {
+      showToast("Conflict Opgelost", `De recentere Teams-bron is als leidend aangemerkt. Het document wordt opnieuw gegenereerd.`);
+    }
+
+    function triggerVerification() {
+      closeInspector();
+      showToast("Verificatie Aangevraagd", "Een notificatie is verstuurd naar het Legal & Compliance team voor hercertificering.");
+    }
+
+    function reportConflict() {
+      closeInspector();
+      showToast("Tegenstrijdigheid Gemeld", "Het Knowledge Management team zal deze case binnen 24 uur analyseren.");
+    }
+
+    // ==========================================
+    // TOAST NOTIFICATIONS
+    // ==========================================
+    let toastTimeout;
+    function showToast(title, message) {
+      clearTimeout(toastTimeout);
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastTitle').innerText = title;
+      document.getElementById('toastMessage').innerText = message;
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      toastTimeout = setTimeout(() => {
+        dismissToast();
+      }, 4500);
+    }
+
+    function dismissToast() {
+      const toast = document.getElementById('toastNotification');
+      toast.classList.add('translate-y-24', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }
+
+    // Keyboard shortcut for Cmd/Ctrl + K
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('globalSearchInput');
+        searchInput.focus();
+        searchInput.select();
+      }
+      if (e.key === 'Escape') {
+        closeInspector();
+        closeExpertModal();
+      }
+    });
+
+    // Initialize on page load
+    window.onload = function() {
+      renderDocuments();
+      runSimulation();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
